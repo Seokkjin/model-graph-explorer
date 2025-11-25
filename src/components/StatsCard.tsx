@@ -7,11 +7,12 @@ interface StatsCardProps {
   subtitle?: string;
   icon: LucideIcon;
   trend?: "up" | "down";
+  blurred?: boolean;
 }
 
-export const StatsCard = ({ title, value, subtitle, icon: Icon, trend }: StatsCardProps) => {
+export const StatsCard = ({ title, value, subtitle, icon: Icon, trend, blurred }: StatsCardProps) => {
   return (
-    <Card className="p-6 border-border bg-gradient-to-br from-card to-muted/30">
+    <Card className={`p-6 border-border bg-gradient-to-br from-card to-muted/30 transition-all duration-300 ${blurred ? "pointer-events-none filter blur-md" : ""}`}>
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-sm text-muted-foreground mb-1">{title}</p>
