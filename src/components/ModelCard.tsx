@@ -1,17 +1,25 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 interface ModelCardProps {
   modelName: string;
+  rscore?: string;
   accuracy?: string;
   rmse?: string;
   imageSrc?: string;
   imageAlt: string;
+  enlarged?: boolean;
+  onToggleEnlarge?: () => void;
 }
 
-export const ModelCard = ({ modelName, accuracy, rmse, imageSrc, imageAlt }: ModelCardProps) => {
+export const ModelCard = ({ modelName, rscore, accuracy, rmse, imageSrc, imageAlt, enlarged, onToggleEnlarge }: ModelCardProps) => {
   return (
-    <Card className="overflow-hidden border-border bg-card hover:border-primary/50 transition-all duration-300">
+    <Card
+      className={`overflow-hidden border-border bg-card hover:border-primary/50 transition-all duration-300 cursor-pointer ${enlarged ? "fixed inset-0 z-50 m-auto max-w-4xl max-h-[90vh] scale-105 shadow-2xl" : ""}`}
+      style={enlarged ? { width: "90vw", height: "90vh" } : {}}
+      onClick={onToggleEnlarge}
+    >
       <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-lg font-semibold text-foreground">{modelName}</h3>
@@ -19,15 +27,21 @@ export const ModelCard = ({ modelName, accuracy, rmse, imageSrc, imageAlt }: Mod
             Model
           </Badge>
         </div>
-        <div className="flex gap-4 text-sm">
+        <div className="flex gap-8 text-sm">
+          {rscore && (
+            <div className="flex flex-col items-start">
+              <span className="text-muted-foreground">R<sup>2</sup> Score</span>
+              <span className="font-mono font-semibold text-foreground text-lg">{parseFloat(rscore).toFixed(2)}</span>
+            </div>
+          )}
           {accuracy && (
-            <div className="flex flex-col">
+            <div className="flex flex-col items-start">
               <span className="text-muted-foreground">Accuracy</span>
               <span className="font-mono font-semibold text-foreground">{accuracy}</span>
             </div>
           )}
           {rmse && (
-            <div className="flex flex-col">
+            <div className="flex flex-col items-start">
               <span className="text-muted-foreground">RMSE</span>
               <span className="font-mono font-semibold text-foreground">{rmse}</span>
             </div>
@@ -37,8 +51,8 @@ export const ModelCard = ({ modelName, accuracy, rmse, imageSrc, imageAlt }: Mod
       <div className="aspect-video bg-muted flex items-center justify-center relative overflow-hidden">
         {imageSrc ? (
           <img 
-            src={imageSrc} 
-            alt={imageAlt} 
+            src={imageSrc}
+            alt={imageAlt}
             className="w-full h-full object-contain"
           />
         ) : (
