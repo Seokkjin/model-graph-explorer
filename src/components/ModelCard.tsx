@@ -10,14 +10,15 @@ interface ModelCardProps {
   imageSrc?: string;
   imageAlt: string;
   enlarged?: boolean;
+  blurred?: boolean;
   onToggleEnlarge?: () => void;
 }
 
-export const ModelCard = ({ modelName, rscore, accuracy, rmse, imageSrc, imageAlt, enlarged, onToggleEnlarge }: ModelCardProps) => {
+export const ModelCard = ({ modelName, rscore, accuracy, rmse, imageSrc, imageAlt, enlarged, blurred, onToggleEnlarge }: ModelCardProps) => {
   return (
     <Card
-      className={`overflow-hidden border-border bg-card hover:border-primary/50 transition-all duration-300 cursor-pointer ${enlarged ? "fixed inset-0 z-50 m-auto max-w-4xl max-h-[90vh] scale-105 shadow-2xl" : ""}`}
-      style={enlarged ? { width: "90vw", height: "90vh" } : {}}
+      className={`overflow-hidden border-border bg-card hover:border-primary/50 transition-all duration-300 cursor-pointer ${enlarged ? "fixed z-50 max-w-4xl w-[90vw] top-36 bottom-8 max-h-[calc(100vh-10rem)] scale-105 shadow-2xl m-auto left-0 right-0" : ""} ${blurred ? "pointer-events-none filter blur-md" : ""}`}
+      style={enlarged ? { } : {}}
       onClick={onToggleEnlarge}
     >
       <div className="p-4 border-b border-border">

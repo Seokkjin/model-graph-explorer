@@ -42,12 +42,13 @@ const Index = () => {
             value={models.length.toString()}
             subtitle="Forecasting models"
             icon={Activity}
+            blurred={enlargedIndex !== null}
           />
         </div>
 
         {/* Model Grid */}
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-foreground mb-6">Model Performance Visualizations</h2>
+          <h2 className={`text-2xl font-bold text-foreground mb-6 transition-all duration-300${enlargedIndex !== null ? ' filter blur-md pointer-events-none' : ''}`}>Model Performance Visualizations</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6">
@@ -59,6 +60,7 @@ const Index = () => {
               imageSrc={model.imageSrc}
               imageAlt={`${model.name} forecasting graph`}
               enlarged={enlargedIndex === index}
+              blurred={enlargedIndex !== null && enlargedIndex !== index}
               onToggleEnlarge={() => setEnlargedIndex(enlargedIndex === index ? null : index)}
             />
           ))}
