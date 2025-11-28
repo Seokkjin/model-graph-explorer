@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
-import Models from "./pages/Models";
+// import Models from "./pages/Models"; // Removed import for non-existent Models.tsx
 
 const queryClient = new QueryClient();
 
@@ -17,9 +17,9 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Analytics />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/models" element={<Models />} />
+                <Route path="/" element={<Analytics />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/models" element={<Index />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

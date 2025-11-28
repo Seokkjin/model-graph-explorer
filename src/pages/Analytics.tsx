@@ -10,6 +10,7 @@ import { StatsCard } from "@/components/StatsCard";
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF6B9D'];
 
 const Analytics = () => {
+    // Removed emphasizedCategory state (no highlight on click)
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<{
     customers: Customer[];
@@ -44,7 +45,7 @@ const Analytics = () => {
   }
 
   const monthlyData = getSalesByMonth(data.sales, data.time);
-  const categoryData = getSalesByCategory(data.sales, data.products);
+  const categoryData = getSalesByCategory(data.sales, data.products).slice(0, 3);
   const regionData = getSalesByRegion(data.sales, data.customers);
   const segmentData = getSalesBySegment(data.sales, data.customers);
   const topProducts = getTopProducts(data.sales, data.products, 10);
@@ -106,12 +107,15 @@ const Analytics = () => {
                   <ResponsiveContainer width="100%" height={400}>
                     <LineChart data={monthlyData}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
+                      <XAxis dataKey="date" stroke="#fff" tick={{ fill: '#fff' }} />
+                      <YAxis stroke="#fff" tick={{ fill: '#fff' }} />
                       <Tooltip 
+                        contentStyle={{ backgroundColor: '#fff', color: '#232736', border: 'none' }}
+                        labelStyle={{ color: '#232736', fontWeight: 600 }}
+                        itemStyle={{ color: '#232736' }}
                         formatter={(value: number) => [`$${value.toLocaleString()}`, 'Sales']}
                       />
-                      <Legend />
+                      <Legend wrapperStyle={{ color: '#232736' }} />
                       <Line type="monotone" dataKey="sales" stroke="#8884d8" strokeWidth={2} />
                     </LineChart>
                   </ResponsiveContainer>
@@ -131,13 +135,23 @@ const Analytics = () => {
                   <ResponsiveContainer width="100%" height={400}>
                     <BarChart data={categoryData}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="category" />
-                      <YAxis />
+                      <XAxis dataKey="category" stroke="#fff" tick={{ fill: '#fff' }} />
+                      <YAxis stroke="#fff" tick={{ fill: '#fff' }} />
                       <Tooltip 
+                        contentStyle={{ backgroundColor: '#fff', color: '#232736', border: 'none' }}
+                        labelStyle={{ color: '#232736', fontWeight: 600 }}
+                        itemStyle={{ color: '#232736' }}
                         formatter={(value: number) => [`$${value.toLocaleString()}`, 'Sales']}
                       />
-                      <Legend />
-                      <Bar dataKey="sales" fill="#8884d8" />
+                      <Legend wrapperStyle={{ color: '#232736' }} />
+                      <Bar dataKey="sales" fill="#4a90e2">
+                        {categoryData.map((entry, idx) => (
+                          <Cell
+                            key={`cell-${entry.category}`}
+                            fill="#4a90e2"
+                          />
+                        ))}
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -165,6 +179,9 @@ const Analytics = () => {
                         ))}
                       </Pie>
                       <Tooltip 
+                        contentStyle={{ backgroundColor: '#fff', color: '#232736', border: 'none' }}
+                        labelStyle={{ color: '#232736', fontWeight: 600 }}
+                        itemStyle={{ color: '#232736' }}
                         formatter={(value: number) => `$${value.toLocaleString()}`}
                       />
                     </PieChart>
@@ -185,12 +202,15 @@ const Analytics = () => {
                   <ResponsiveContainer width="100%" height={400}>
                     <BarChart data={regionData} layout="vertical">
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" />
-                      <YAxis dataKey="region" type="category" width={100} />
+                      <XAxis type="number" stroke="#fff" tick={{ fill: '#fff' }} />
+                      <YAxis dataKey="region" type="category" width={100} stroke="#fff" tick={{ fill: '#fff' }} />
                       <Tooltip 
+                        contentStyle={{ backgroundColor: '#fff', color: '#232736', border: 'none' }}
+                        labelStyle={{ color: '#232736', fontWeight: 600 }}
+                        itemStyle={{ color: '#232736' }}
                         formatter={(value: number) => [`$${value.toLocaleString()}`, 'Sales']}
                       />
-                      <Legend />
+                      <Legend wrapperStyle={{ color: '#232736' }} />
                       <Bar dataKey="sales" fill="#82ca9d" />
                     </BarChart>
                   </ResponsiveContainer>
@@ -210,17 +230,21 @@ const Analytics = () => {
                   <ResponsiveContainer width="100%" height={500}>
                     <BarChart data={topProducts} layout="vertical">
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" />
+                      <XAxis type="number" stroke="#fff" tick={{ fill: '#fff' }} />
                       <YAxis 
                         dataKey="product_name" 
                         type="category" 
                         width={200}
-                        tick={{ fontSize: 12 }}
+                        tick={{ fontSize: 12, fill: '#fff' }}
+                        stroke="#fff"
                       />
                       <Tooltip 
+                        contentStyle={{ backgroundColor: '#fff', color: '#232736', border: 'none' }}
+                        labelStyle={{ color: '#232736', fontWeight: 600 }}
+                        itemStyle={{ color: '#232736' }}
                         formatter={(value: number) => [`$${value.toLocaleString()}`, 'Sales']}
                       />
-                      <Legend />
+                      <Legend wrapperStyle={{ color: '#232736' }} />
                       <Bar dataKey="sales" fill="#ffc658" />
                     </BarChart>
                   </ResponsiveContainer>

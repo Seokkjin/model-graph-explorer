@@ -55,19 +55,22 @@ export interface Sale {
 
 // Parse CSV data
 function parseCSV<T>(csvText: string): T[] {
-  const lines = csvText.trim().split('\n');
+  const lines = csvText.trim().replace(/\r/g, '').split('\n');
   const headers = lines[0].split(',');
-  
+
   return lines.slice(1).map(line => {
-    const values = line.split(',');
+    const values = line.split(',').map(v => v.trim());
     const obj: any = {};
-    
     headers.forEach((header, index) => {
-      const value = values[index];
-      // Try to parse as number
-      obj[header] = isNaN(Number(value)) ? value : Number(value);
+      let value = values[index];
+      // Special handling for 'sales' field and other numeric fields
+      if (header === 'sales' || header.endsWith('_key') || header === 'row_id' || header === 'month' || header === 'year' || header === 'week' || header === 'day' || header === 'day_of_week' || header === 'day_of_year') {
+        // If value is empty or not a valid number, default to 0
+        obj[header] = value === '' || isNaN(Number(value)) ? 0 : Number(value);
+      } else {
+        obj[header] = value;
+      }
     });
-    
     return obj as T;
   });
 }

@@ -23,15 +23,6 @@ export const DashboardHeader = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Link to="/">
-              <Button 
-                variant={location.pathname === "/" ? "default" : "outline"}
-                size="sm"
-              >
-                <TrendingUp className="w-4 h-4 mr-2" />
-                Models
-              </Button>
-            </Link>
             <Link to="/analytics">
               <Button 
                 variant={location.pathname === "/analytics" ? "default" : "outline"}
@@ -39,6 +30,15 @@ export const DashboardHeader = () => {
               >
                 <BarChart3 className="w-4 h-4 mr-2" />
                 Analytics
+              </Button>
+            </Link>
+            <Link to="/models">
+              <Button 
+                variant={location.pathname === "/models" ? "default" : "outline"}
+                size="sm"
+              >
+                <TrendingUp className="w-4 h-4 mr-2" />
+                Models
               </Button>
             </Link>
           </div>
