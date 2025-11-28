@@ -7,7 +7,7 @@ import { loadDatasets, getSalesByMonth, getSalesByCategory, getSalesByRegion, ge
 import { Loader2, TrendingUp, DollarSign, ShoppingCart, Users } from "lucide-react";
 import { StatsCard } from "@/components/StatsCard";
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF6B9D'];
+const COLORS = ['#ffc658', '#4a90e2', '#8884d8']; // Yellow (top products), Blue (sales by category), Violet (sales trends)
 
 const Analytics = () => {
     // Removed emphasizedCategory state (no highlight on click)
@@ -211,7 +211,7 @@ const Analytics = () => {
                         formatter={(value: number) => [`$${value.toLocaleString()}`, 'Sales']}
                       />
                       <Legend wrapperStyle={{ color: '#232736' }} />
-                      <Bar dataKey="sales" fill="#82ca9d" />
+                      <Bar dataKey="sales" fill="#8884d8" />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
