@@ -1,6 +1,10 @@
 import { BarChart3, TrendingUp } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 export const DashboardHeader = () => {
+  const location = useLocation();
+  
   return (
     <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
       <div className="container mx-auto px-6 py-6">
@@ -18,9 +22,25 @@ export const DashboardHeader = () => {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/50 border border-border">
-            <BarChart3 className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-foreground">Analytics View</span>
+          <div className="flex items-center gap-3">
+            <Link to="/analytics">
+              <Button 
+                variant={location.pathname === "/analytics" ? "default" : "outline"}
+                size="sm"
+              >
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Analytics
+              </Button>
+            </Link>
+            <Link to="/models">
+              <Button 
+                variant={location.pathname === "/models" ? "default" : "outline"}
+                size="sm"
+              >
+                <TrendingUp className="w-4 h-4 mr-2" />
+                Models
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
