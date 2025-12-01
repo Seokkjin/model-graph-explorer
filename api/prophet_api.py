@@ -46,8 +46,14 @@ def prophet_forecast():
         # Make predictions on historical data
         historical_predict = model.predict(df)
         
-        # Make future predictions
-        future = model.make_future_dataframe(periods=forecast_periods, freq='M')
+        # Make future predictions - only first day of each month
+        last_date = df['ds'].iloc[-1]
+        future_dates = pd.date_range(
+            start=last_date + pd.DateOffset(months=1),
+            periods=forecast_periods,
+            freq='MS'  # Month Start frequency - first day of each month
+        )
+        future = pd.DataFrame({'ds': future_dates})
         future_predict = model.predict(future)
         
         # Calculate evaluation metrics on historical data
@@ -101,18 +107,21 @@ def prophet_forecast():
         
         # Future forecast (beyond historical data)
         future_forecast = []
-        last_date = df['ds'].iloc[-1]
         for idx, row in future_predict.iterrows():
-            if row['ds'] > last_date:
-                future_forecast.append({
-                    'date': row['ds'].strftime('%Y-%m-%d'),
-                    'forecast': float(row['yhat']),
-                    'forecast_lower': float(row['yhat_lower']),
-                    'forecast_upper': float(row['yhat_upper'])
-                })
+            future_forecast.append({
+                'date': row['ds'].strftime('%Y-%m-%d'),
+                'forecast': float(row['yhat']),
+                'forecast_lower': float(row['yhat_lower']),
+                'forecast_upper': float(row['yhat_upper'])
+            })
         
-        # Get trend component
+        # Get trend component (combine historical and future)
         trend_data = []
+        for idx, row in historical_predict.iterrows():
+            trend_data.append({
+                'date': row['ds'].strftime('%Y-%m-%d'),
+                'trend': float(row['trend'])
+            })
         for idx, row in future_predict.iterrows():
             trend_data.append({
                 'date': row['ds'].strftime('%Y-%m-%d'),

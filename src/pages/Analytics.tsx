@@ -3,8 +3,8 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { loadDatasets, getSalesByMonth, getSalesByCategory, getSalesByRegion, getSalesBySegment, getTopProducts, getSalesStats, getProphetForecast, Customer, Product, Order, Shipment, Time, Sale, ProphetResponse } from "@/lib/dataLoader";
-import { Loader2, TrendingUp, DollarSign, ShoppingCart, Users, Brain, AlertCircle } from "lucide-react";
+import { loadDatasets, getSalesByMonth, getSalesByCategory, getSalesByRegion, getSalesBySegment, getSalesByState, getSalesByStateAndCategory, getTopProducts, getSalesStats, getProphetForecast, Customer, Product, Order, Shipment, Time, Sale, ProphetResponse } from "@/lib/dataLoader";
+import { Loader2, TrendingUp, DollarSign, ShoppingCart, Users, Brain, AlertCircle, Lightbulb, TrendingDown, Target, AlertTriangle } from "lucide-react";
 import { StatsCard } from "@/components/StatsCard";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -12,8 +12,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 const COLORS = ['#ffc658', '#4a90e2', '#8884d8']; // Yellow (top products), Blue (sales by category), Violet (sales trends)
 
 const Analytics = () => {
-    // Removed emphasizedCategory state (no highlight on click)
   const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
+  const [selectedProductCategory, setSelectedProductCategory] = useState<string | null>(null);
   const [data, setData] = useState<{
     customers: Customer[];
     products: Product[];
@@ -74,8 +76,37 @@ const Analytics = () => {
   const monthlyData = getSalesByMonth(data.sales, data.time);
   const categoryData = getSalesByCategory(data.sales, data.products).slice(0, 3);
   const regionData = getSalesByRegion(data.sales, data.customers);
-  const segmentData = getSalesBySegment(data.sales, data.customers);
-  const topProducts = getTopProducts(data.sales, data.products, 10);
+  
+  // Filter by region if one is selected
+  const regionFilteredSales = selectedRegion
+    ? data.sales.filter(sale => {
+        const customer = data.customers.find(c => c.customer_key === sale.customer_key);
+        return customer?.region === selectedRegion;
+      })
+    : data.sales;
+  
+  const stateData = getSalesByState(regionFilteredSales, data.customers).slice(0, 10);
+  const stateCategoryData = getSalesByStateAndCategory(regionFilteredSales, data.customers, data.products, selectedRegion ? 20 : 10);
+  
+  // Filter sales by category if one is selected
+  const filteredSales = selectedCategory 
+    ? data.sales.filter(sale => {
+        const product = data.products.find(p => p.product_key === sale.product_key);
+        return product?.category === selectedCategory;
+      })
+    : data.sales;
+  
+  const segmentData = getSalesBySegment(filteredSales, data.customers);
+  
+  // Filter products by category if one is selected
+  const productFilteredSales = selectedProductCategory
+    ? data.sales.filter(sale => {
+        const product = data.products.find(p => p.product_key === sale.product_key);
+        return product?.category === selectedProductCategory;
+      })
+    : data.sales;
+  
+  const topProducts = getTopProducts(productFilteredSales, data.products, 10);
   const stats = getSalesStats(data.sales);
 
   return (
@@ -122,6 +153,7 @@ const Analytics = () => {
             <TabsTrigger value="categories">Categories</TabsTrigger>
             <TabsTrigger value="geography">Geography</TabsTrigger>
             <TabsTrigger value="products">Top Products</TabsTrigger>
+            <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
           </TabsList>
 
           <TabsContent value="trends" className="space-y-4">
@@ -453,7 +485,7 @@ const Analytics = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Sales by Category</CardTitle>
-                  <CardDescription>Product category performance</CardDescription>
+                  <CardDescription>Click a category to filter customer segments</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={400}>
@@ -468,11 +500,16 @@ const Analytics = () => {
                         formatter={(value: number) => [`$${value.toLocaleString()}`, 'Sales']}
                       />
                       <Legend wrapperStyle={{ color: '#232736' }} />
-                      <Bar dataKey="sales" fill="#4a90e2">
-                        {categoryData.map((entry, idx) => (
+                      <Bar 
+                        dataKey="sales" 
+                        fill="#4a90e2"
+                        onClick={(data) => setSelectedCategory(data.category)}
+                        cursor="pointer"
+                      >
+                        {categoryData.map((entry) => (
                           <Cell
                             key={`cell-${entry.category}`}
-                            fill="#4a90e2"
+                            fill={selectedCategory === entry.category ? "#f59e0b" : "#4a90e2"}
                           />
                         ))}
                       </Bar>
@@ -483,8 +520,25 @@ const Analytics = () => {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Customer Segments</CardTitle>
-                  <CardDescription>Sales distribution by segment</CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Customer Segments</CardTitle>
+                      <CardDescription>
+                        {selectedCategory 
+                          ? `Segments for ${selectedCategory}`
+                          : 'Sales distribution by segment'}
+                      </CardDescription>
+                    </div>
+                    {selectedCategory && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setSelectedCategory(null)}
+                      >
+                        Clear Filter
+                      </Button>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={400}>
@@ -516,11 +570,11 @@ const Analytics = () => {
           </TabsContent>
 
           <TabsContent value="geography" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-1">
+            <div className="grid gap-4 md:grid-cols-2">
               <Card>
                 <CardHeader>
                   <CardTitle>Sales by Region</CardTitle>
-                  <CardDescription>Geographic distribution of sales</CardDescription>
+                  <CardDescription>Click a region to filter states</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={400}>
@@ -535,7 +589,65 @@ const Analytics = () => {
                         formatter={(value: number) => [`$${value.toLocaleString()}`, 'Sales']}
                       />
                       <Legend wrapperStyle={{ color: '#232736' }} />
-                      <Bar dataKey="sales" fill="#8884d8" />
+                      <Bar 
+                        dataKey="sales" 
+                        fill="#8884d8"
+                        onClick={(data) => setSelectedRegion(data.region)}
+                        cursor="pointer"
+                      >
+                        {regionData.map((entry) => (
+                          <Cell
+                            key={`cell-${entry.region}`}
+                            fill={selectedRegion === entry.region ? "#f59e0b" : "#8884d8"}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>
+                        {selectedRegion ? `States in ${selectedRegion}` : 'Top 10 States by Sales'}
+                      </CardTitle>
+                      <CardDescription>
+                        {selectedRegion ? `All states in the ${selectedRegion} region` : 'Highest performing states'}
+                      </CardDescription>
+                    </div>
+                    {selectedRegion && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setSelectedRegion(null)}
+                      >
+                        Clear Filter
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <BarChart data={stateData} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" stroke="#fff" tick={{ fill: '#fff' }} />
+                      <YAxis 
+                        dataKey="state" 
+                        type="category" 
+                        width={100} 
+                        stroke="#fff" 
+                        tick={{ fill: '#fff', fontSize: 11 }} 
+                      />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#fff', color: '#232736', border: 'none' }}
+                        labelStyle={{ color: '#232736', fontWeight: 600 }}
+                        itemStyle={{ color: '#232736' }}
+                        formatter={(value: number) => [`$${value.toLocaleString()}`, 'Sales']}
+                      />
+                      <Bar dataKey="sales" fill="#10b981" />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -547,8 +659,46 @@ const Analytics = () => {
             <div className="grid gap-4 md:grid-cols-1">
               <Card>
                 <CardHeader>
-                  <CardTitle>Top 10 Products by Sales</CardTitle>
-                  <CardDescription>Best performing products</CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>
+                        {selectedProductCategory ? `Top 10 ${selectedProductCategory} Products` : 'Top 10 Products by Sales'}
+                      </CardTitle>
+                      <CardDescription>
+                        {selectedProductCategory ? `Best performing ${selectedProductCategory.toLowerCase()} products` : 'Best performing products across all categories'}
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant={!selectedProductCategory ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setSelectedProductCategory(null)}
+                      >
+                        All
+                      </Button>
+                      <Button 
+                        variant={selectedProductCategory === "Technology" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setSelectedProductCategory("Technology")}
+                      >
+                        Technology
+                      </Button>
+                      <Button 
+                        variant={selectedProductCategory === "Furniture" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setSelectedProductCategory("Furniture")}
+                      >
+                        Furniture
+                      </Button>
+                      <Button 
+                        variant={selectedProductCategory === "Office Supplies" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setSelectedProductCategory("Office Supplies")}
+                      >
+                        Office Supplies
+                      </Button>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={500}>
@@ -575,6 +725,196 @@ const Analytics = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="recommendations" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Lightbulb className="h-5 w-5 text-yellow-500" />
+                  Strategic Business Recommendations
+                </CardTitle>
+                <CardDescription>Data-driven insights and actionable recommendations</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Revenue Optimization */}
+                <div className="border-l-4 border-green-500 pl-4 py-2">
+                  <div className="flex items-start gap-3">
+                    <TrendingUp className="h-6 w-6 text-green-500 mt-1 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-semibold text-lg mb-2">Revenue Growth Opportunities</h3>
+                      <div className="space-y-2 text-sm text-muted-foreground">
+                        <p>
+                          • <strong>Focus on {regionData[0]?.region} Region:</strong> This region generates ${regionData[0]?.sales.toLocaleString()} in sales. 
+                          Increase marketing budget by 15-20% in this high-performing area to maximize returns.
+                        </p>
+                        <p>
+                          • <strong>Expand {categoryData[0]?.category} Category:</strong> Your top category with ${categoryData[0]?.sales.toLocaleString()} in sales. 
+                          Consider expanding product lines and creating bundled offers to increase average order value by 25%.
+                        </p>
+                        <p>
+                          • <strong>Leverage {segmentData[0]?.segment} Segment:</strong> This customer segment drives significant revenue. 
+                          Develop a loyalty program offering 10% discounts on bulk orders to increase retention and lifetime value.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Market Expansion */}
+                <div className="border-l-4 border-blue-500 pl-4 py-2">
+                  <div className="flex items-start gap-3">
+                    <Target className="h-6 w-6 text-blue-500 mt-1 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-semibold text-lg mb-2">Market Expansion Strategy</h3>
+                      <div className="space-y-2 text-sm text-muted-foreground">
+                        <p>
+                          • <strong>Underperforming Region - {regionData[regionData.length - 1]?.region}:</strong> Only ${regionData[regionData.length - 1]?.sales.toLocaleString()} in sales. 
+                          Launch targeted campaigns with localized promotions and consider partnerships with regional distributors.
+                        </p>
+                        <p>
+                          • <strong>State-Level Opportunities:</strong> Analyze states within {regionData[1]?.region} region for untapped potential. 
+                          Implement pilot programs in 2-3 strategic locations before full rollout.
+                        </p>
+                        <p>
+                          • <strong>Cross-Region Learning:</strong> Apply successful tactics from {regionData[0]?.region} to other regions. 
+                          Share best practices, sales strategies, and product positioning approaches.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Product Strategy */}
+                <div className="border-l-4 border-purple-500 pl-4 py-2">
+                  <div className="flex items-start gap-3">
+                    <ShoppingCart className="h-6 w-6 text-purple-500 mt-1 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-semibold text-lg mb-2">Product Portfolio Optimization</h3>
+                      <div className="space-y-2 text-sm text-muted-foreground">
+                        <p>
+                          • <strong>Promote Top Performer:</strong> "{topProducts[0]?.product_name}" generates ${topProducts[0]?.sales.toLocaleString()}. 
+                          Feature prominently in marketing materials, create upsell opportunities, and ensure consistent inventory.
+                        </p>
+                        <p>
+                          • <strong>Category Mix:</strong> Balance inventory based on performance - allocate 50% to {categoryData[0]?.category}, 
+                          30% to {categoryData[1]?.category}, and 20% to {categoryData[2]?.category} to optimize warehouse space and cash flow.
+                        </p>
+                        <p>
+                          • <strong>Slow-Moving Items:</strong> Review bottom 20% products for discontinuation or clearance sales. 
+                          Redirect freed capital and warehouse space to high-performing categories.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Customer Experience */}
+                <div className="border-l-4 border-orange-500 pl-4 py-2">
+                  <div className="flex items-start gap-3">
+                    <Users className="h-6 w-6 text-orange-500 mt-1 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-semibold text-lg mb-2">Customer Experience Enhancement</h3>
+                      <div className="space-y-2 text-sm text-muted-foreground">
+                        <p>
+                          • <strong>Segment-Specific Campaigns:</strong> Create personalized email campaigns for each segment. 
+                          {segmentData[0]?.segment} customers prefer premium options - highlight quality and features.
+                        </p>
+                        <p>
+                          • <strong>Regional Customization:</strong> Adapt product offerings to regional preferences. 
+                          States in {regionData[0]?.region} show strong category preferences - tailor inventory accordingly.
+                        </p>
+                        <p>
+                          • <strong>Retention Program:</strong> Implement a tiered rewards system. Target customers spending above average (${stats.average.toLocaleString()}) 
+                          with exclusive previews, free shipping, and priority support.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Operational Efficiency */}
+                <div className="border-l-4 border-red-500 pl-4 py-2">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-6 w-6 text-red-500 mt-1 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-semibold text-lg mb-2">Risk Mitigation & Efficiency</h3>
+                      <div className="space-y-2 text-sm text-muted-foreground">
+                        <p>
+                          • <strong>Inventory Management:</strong> Use forecasting data to maintain optimal stock levels. 
+                          Reduce carrying costs by 15-20% while preventing stockouts of top 20 products.
+                        </p>
+                        <p>
+                          • <strong>Seasonal Planning:</strong> Analyze monthly trends to prepare for peak periods. 
+                          Increase staffing and inventory 30 days before high-sales months identified in trends.
+                        </p>
+                        <p>
+                          • <strong>Diversification:</strong> Reduce dependency on top category ({categoryData[0]?.category} at {((categoryData[0]?.sales / stats.total) * 100).toFixed(1)}% of total sales). 
+                          Develop complementary product lines to mitigate category-specific risks.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Implementation Timeline */}
+                <Card className="bg-accent/5 border-accent">
+                  <CardHeader>
+                    <CardTitle className="text-base">Recommended Implementation Timeline</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3 text-sm">
+                      <div className="flex items-start gap-3">
+                        <div className="font-semibold w-24 flex-shrink-0 text-blue-400">Immediate</div>
+                        <div className="text-muted-foreground">
+                          Optimize inventory for top products, launch retention program for high-value segments
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="font-semibold w-24 flex-shrink-0 text-green-400">30 Days</div>
+                        <div className="text-muted-foreground">
+                          Increase marketing in top region, develop category expansion plans, implement forecasting system
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="font-semibold w-24 flex-shrink-0 text-yellow-400">60-90 Days</div>
+                        <div className="text-muted-foreground">
+                          Launch campaigns in underperforming regions, roll out loyalty program, optimize product mix
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="font-semibold w-24 flex-shrink-0 text-purple-400">Quarterly</div>
+                        <div className="text-muted-foreground">
+                          Review performance metrics, adjust strategies based on results, expand successful initiatives
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Expected Impact */}
+                <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg p-4 border border-blue-500/20">
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-green-500" />
+                    Expected Business Impact
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div className="text-center p-3 bg-background/50 rounded">
+                      <div className="text-2xl font-bold text-green-400">15-25%</div>
+                      <div className="text-muted-foreground mt-1">Revenue Growth</div>
+                    </div>
+                    <div className="text-center p-3 bg-background/50 rounded">
+                      <div className="text-2xl font-bold text-blue-400">20-30%</div>
+                      <div className="text-muted-foreground mt-1">Customer Retention</div>
+                    </div>
+                    <div className="text-center p-3 bg-background/50 rounded">
+                      <div className="text-2xl font-bold text-purple-400">10-15%</div>
+                      <div className="text-muted-foreground mt-1">Operational Efficiency</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </main>

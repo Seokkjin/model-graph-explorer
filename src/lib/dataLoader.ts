@@ -194,6 +194,85 @@ export function getSalesStats(sales: Sale[]) {
   };
 }
 
+export function getSalesByState(sales: Sale[], customers: Customer[]) {
+  const customerMap = new Map(customers.map(c => [c.customer_key, c]));
+  const stateData = new Map<string, { state: string; region: string; sales: number }>();
+
+  sales.forEach(sale => {
+    const customer = customerMap.get(sale.customer_key);
+    if (customer) {
+      const existing = stateData.get(customer.state);
+      if (existing) {
+        existing.sales += sale.sales;
+      } else {
+        stateData.set(customer.state, {
+          state: customer.state,
+          region: customer.region,
+          sales: sale.sales
+        });
+      }
+    }
+  });
+
+  return Array.from(stateData.values())
+    .map(item => ({ ...item, sales: Math.round(item.sales * 100) / 100 }))
+    .sort((a, b) => b.sales - a.sales);
+}
+
+export function getSalesByStateAndCategory(sales: Sale[], customers: Customer[], products: Product[], topN = 10) {
+  const customerMap = new Map(customers.map(c => [c.customer_key, c]));
+  const productMap = new Map(products.map(p => [p.product_key, p]));
+  
+  // First, get top states
+  const stateSales = new Map<string, number>();
+  sales.forEach(sale => {
+    const customer = customerMap.get(sale.customer_key);
+    if (customer) {
+      stateSales.set(customer.state, (stateSales.get(customer.state) || 0) + sale.sales);
+    }
+  });
+  
+  const topStates = Array.from(stateSales.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, topN)
+    .map(([state]) => state);
+
+  // Then get category breakdown for each top state
+  const stateCategories = new Map<string, Map<string, number>>();
+  
+  sales.forEach(sale => {
+    const customer = customerMap.get(sale.customer_key);
+    const product = productMap.get(sale.product_key);
+    
+    if (customer && product && topStates.includes(customer.state)) {
+      if (!stateCategories.has(customer.state)) {
+        stateCategories.set(customer.state, new Map());
+      }
+      const categoryMap = stateCategories.get(customer.state)!;
+      categoryMap.set(product.category, (categoryMap.get(product.category) || 0) + sale.sales);
+    }
+  });
+
+  return Array.from(stateCategories.entries()).map(([state, categories]) => {
+    const categoryBreakdown = Array.from(categories.entries())
+      .map(([category, sales]) => ({ category, sales: Math.round(sales * 100) / 100 }))
+      .sort((a, b) => b.sales - a.sales);
+    
+    const totalSales = categoryBreakdown.reduce((sum, c) => sum + c.sales, 0);
+    const topCategory = categoryBreakdown[0];
+    const customer = customers.find(c => c.state === state);
+    
+    return {
+      state,
+      region: customer?.region || '',
+      totalSales: Math.round(totalSales * 100) / 100,
+      topCategory: topCategory.category,
+      topCategorySales: topCategory.sales,
+      categoryBreakdown
+    };
+  }).sort((a, b) => b.totalSales - a.totalSales);
+}
+
 // Prophet forecasting interfaces
 export interface ProphetDataPoint {
   date: string;
