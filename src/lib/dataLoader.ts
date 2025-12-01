@@ -193,3 +193,69 @@ export function getSalesStats(sales: Sale[]) {
     count: sales.length
   };
 }
+
+// Prophet forecasting interfaces
+export interface ProphetDataPoint {
+  date: string;
+  actual?: number;
+  predicted?: number;
+}
+
+export interface ProphetForecastPoint {
+  date: string;
+  forecast: number;
+  forecast_lower: number;
+  forecast_upper: number;
+}
+
+export interface ProphetMetrics {
+  r2: number;
+  mae: number;
+  mse: number;
+  rmse: number;
+  msle: number;
+  mape: number;
+  accuracy: number;
+  medae: number;
+  max_error: number;
+  explained_variance: number;
+  mean_pinball_loss: number;
+  d2_tweedie: number;
+  d2_pinball: number;
+}
+
+export interface ProphetResponse {
+  success: boolean;
+  historical_data: ProphetDataPoint[];
+  future_forecast: ProphetForecastPoint[];
+  trend: { date: string; trend: number }[];
+  metrics: ProphetMetrics;
+  data_info: {
+    total_records: number;
+    forecast_periods: number;
+  };
+}
+
+// Fetch Prophet forecast from API
+export async function getProphetForecast(
+  salesData: { date: string; sales: number }[],
+  forecastPeriods: number = 12
+): Promise<ProphetResponse> {
+  const response = await fetch('http://localhost:5000/api/forecast/prophet', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      sales_data: salesData,
+      forecast_periods: forecastPeriods,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || `Prophet API error: ${response.statusText}`);
+  }
+
+  return await response.json();
+}
